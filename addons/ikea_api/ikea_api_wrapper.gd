@@ -132,7 +132,7 @@ func _make_request(url: String, params: Dictionary, headers: Dictionary, callbac
 			var encoded_key = key.uri_encode()
 			var encoded_value = str(value).uri_encode()
 			param_array.append(encoded_key + "=" + encoded_value)
-		query_string = "?" + "".join(param_array).replace("?", "&").trim_prefix("&")
+		query_string = "?" + "&".join(param_array)
 	
 	# Construct full URL with query string
 	var full_url = url + query_string
