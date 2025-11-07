@@ -864,6 +864,9 @@ func _on_model_metadata_completed(body: PackedByteArray, error: String, item_no:
 		model_failed.emit(compact, error_msg)
 		return
 	
+	# Debug: print metadata structure
+	print("[IkeaApiWrapper] Model metadata keys: ", data.keys())
+	
 	# Extract modelUrl from the response
 	if not data.has("modelUrl"):
 		var error_msg = "Model URL not found in metadata"
@@ -872,6 +875,13 @@ func _on_model_metadata_completed(body: PackedByteArray, error: String, item_no:
 		return
 	
 	var model_url = data["modelUrl"]
+	
+	# Try to get uncompressed version by replacing 'simple' with 'uncompressed' in the URL
+	# The simple version uses Draco compression which Godot doesn't support by default
+	if "/simple/glb/" in model_url:
+		var uncompressed_url = model_url.replace("/simple/glb/", "/uncompressed/glb/")
+		print("[IkeaApiWrapper] Trying uncompressed URL: %s" % uncompressed_url)
+		model_url = uncompressed_url
 	if not (model_url is String) or model_url.is_empty():
 		var error_msg = "Model URL is empty or invalid"
 		push_error("[IkeaApiWrapper] Invalid model URL for item %s: %s" % [item_no, str(model_url)])
