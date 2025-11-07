@@ -876,10 +876,17 @@ func _on_model_metadata_completed(body: PackedByteArray, error: String, item_no:
 	
 	var model_url = data["modelUrl"]
 	
-	# Try to get uncompressed version by replacing 'simple' with 'uncompressed' in the URL
-	# The simple version uses Draco compression which Godot doesn't support by default
-	if "/simple/glb/" in model_url:
+	# Try to get uncompressed version by replacing draco compressed paths
+	# The simple/draco versions use Draco compression which Godot doesn't support by default
+	if "/simple/glb_draco/" in model_url:
+		# Try replacing with uncompressed version
+		var uncompressed_url = model_url.replace("/simple/glb_draco/", "/uncompressed/glb/")
+		uncompressed_url = uncompressed_url.replace("-simple+draco.glb", "-uncompressed.glb")
+		print("[IkeaApiWrapper] Trying uncompressed URL: %s" % uncompressed_url)
+		model_url = uncompressed_url
+	elif "/simple/glb/" in model_url:
 		var uncompressed_url = model_url.replace("/simple/glb/", "/uncompressed/glb/")
+		uncompressed_url = uncompressed_url.replace("-simple.glb", "-uncompressed.glb")
 		print("[IkeaApiWrapper] Trying uncompressed URL: %s" % uncompressed_url)
 		model_url = uncompressed_url
 	if not (model_url is String) or model_url.is_empty():
