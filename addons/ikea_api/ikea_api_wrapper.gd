@@ -512,19 +512,22 @@ func _on_search_completed(body: PackedByteArray, error: String) -> void:
 	
 	# Process each product item
 	for item in items:
-		# Validate required fields
-		if not item.has("itemNo") or not item.has("name") or not item.has("mainImageUrl") or not item.has("mainImageAlt") or not item.has("pipUrl"):
-			# Skip items with missing required fields
+		# Debug: print first item structure to see what fields are available
+		if results.is_empty() and skipped_count == 0:
+			print("[IkeaApiWrapper] First item fields: ", item.keys())
+		
+		# Only require itemNo and name as essential fields
+		if not item.has("itemNo") or not item.has("name"):
 			skipped_count += 1
 			continue
 		
-		# Build result dictionary
+		# Build result dictionary with optional fields
 		var result = {
 			"itemNo": item["itemNo"],
 			"name": item["name"],
-			"mainImageUrl": item["mainImageUrl"],
-			"mainImageAlt": item["mainImageAlt"],
-			"pipUrl": item["pipUrl"]
+			"mainImageUrl": item.get("mainImageUrl", item.get("imageUrl", "")),
+			"mainImageAlt": item.get("mainImageAlt", item.get("name", "")),
+			"pipUrl": item.get("pipUrl", "")
 		}
 		
 		results.append(result)
