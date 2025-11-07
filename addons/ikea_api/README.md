@@ -420,6 +420,39 @@ func _on_model_failed(item_no: String, error: String):
 - **Data Errors**: JSON parsing failures, invalid item number format, missing fields
 - **File Errors**: Cache directory creation failure, file write errors
 
+## Draco Compression Issue
+
+IKEA's 3D models use Draco compression (`KHR_draco_mesh_compression`), which Godot doesn't support by default. You have two options:
+
+### Option 1: Use gltf-transform (Recommended)
+
+Install the gltf-transform CLI tool to decompress models:
+
+```bash
+npm install -g @gltf-transform/cli
+```
+
+Then decompress downloaded models:
+
+```bash
+# Decompress a single model
+gltf-transform draco res://cache/12345678/model.glb res://cache/12345678/model_uncompressed.glb --decode
+
+# Or use the provided script
+chmod +x addons/ikea_api/decompress_draco.sh
+./addons/ikea_api/decompress_draco.sh res://cache/12345678/model.glb
+```
+
+### Option 2: Install Godot Draco Extension
+
+Install a Godot plugin that adds Draco support:
+- Search for "Godot Draco" extensions in the Asset Library
+- Or compile Godot with Draco support enabled
+
+### Option 3: Automated Decompression (Future Enhancement)
+
+The addon could be extended to automatically decompress models after download using an external tool.
+
 ## Troubleshooting
 
 ### Issue: "All HTTP request nodes are busy"

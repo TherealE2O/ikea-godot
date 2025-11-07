@@ -21,6 +21,8 @@ func _ready():
 	ikea.model_downloaded.connect(_on_model_downloaded)
 	ikea.model_failed.connect(_on_model_failed)
 	ikea.model_exists_checked.connect(_on_model_exists_checked)
+	ikea.thumbnail_downloaded.connect(_on_thumbnail_downloaded)
+	ikea.thumbnail_failed.connect(_on_thumbnail_failed)
 	
 	# Connect UI signals
 	search_button.pressed.connect(_on_search_pressed)
@@ -69,25 +71,44 @@ func _on_search_completed(results: Array):
 		results_container.add_child(result_item)
 
 func _create_result_item(item: Dictionary) -> Control:
-	var container = VBoxContainer.new()
-	container.add_theme_constant_override("separation", 4)
+	var container = HBoxContainer.new()
+	container.add_theme_constant_override("separation", 8)
 	
-	# Product name and item number
-	var header = HBoxContainer.new()
+	# Thumbnail preview
+	var thumbnail = TextureRect.new()
+	thumbnail.name = "Thumbnail_%s" % item.itemNo
+	thumbnail.custom_minimum_size = Vector2(80, 80)
+	thumbnail.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	thumbnail.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	container.add_child(thumbnail)
 	
+	# Download thumbnail if URL is available
+	if item.has("mainImageUrl") and not item.mainImageUrl.is_empty():
+		ikea.get_thumbnail(item.itemNo, item.mainImageUrl)
+	
+	# Product info container
+	var info_container = VBoxContainer.new()
+	info_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_container.add_theme_constant_override("separation", 4)
+	
+	# Product name
 	var name_label = Label.new()
 	name_label.text = item.name
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	header.add_child(name_label)
-	
-	container.add_child(header)
+	info_container.add_child(name_label)
 	
 	# Item number
 	var item_no_label = Label.new()
 	item_no_label.text = "Item: %s" % item.itemNo
 	item_no_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	container.add_child(item_no_label)
+	info_container.add_child(item_no_label)
+	
+	container.add_child(info_container)
+	
+	# Wrap in VBoxContainer for buttons below
+	var wrapper = VBoxContainer.new()
+	wrapper.add_theme_constant_override("separation", 4)
+	wrapper.add_child(container)
 	
 	# Buttons
 	var button_container = HBoxContainer.new()
@@ -114,13 +135,13 @@ func _create_result_item(item: Dictionary) -> Control:
 	item_status.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	button_container.add_child(item_status)
 	
-	container.add_child(button_container)
+	wrapper.add_child(button_container)
 	
 	# Separator
 	var separator = HSeparator.new()
-	container.add_child(separator)
+	wrapper.add_child(separator)
 	
-	return container
+	return wrapper
 
 func _on_check_model_pressed(item_no: String):
 	var status = _find_item_status(item_no)
@@ -186,3 +207,17 @@ func _find_item_status(item_no: String) -> Label:
 
 func _find_download_button(item_no: String) -> Button:
 	return results_container.find_child("DownloadButton_%s" % item_no, true, false) as Button
+
+func _find_thumbnail(item_no: String) -> TextureRect:
+	return results_container.find_child("Thumbnail_%s" % item_no, true, false) as TextureRect
+
+func _on_thumbnail_downloaded(item_no: String, path: String):
+	var thumbnail = _find_thumbnail(item_no)
+	if thumbnail:
+		var image = Image.load_from_file(path)
+		if image:
+			thumbnail.texture = ImageTexture.create_from_image(image)
+			print("[IKEA Browser] Thumbnail loaded for item %s" % item_no)
+
+func _on_thumbnail_failed(item_no: String, error: String):
+	print("[IKEA Browser] Thumbnail failed for item %s: %s" % [item_no, error])

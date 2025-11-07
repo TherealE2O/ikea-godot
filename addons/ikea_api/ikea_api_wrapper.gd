@@ -952,5 +952,49 @@ func _on_model_download_completed(body: PackedByteArray, error: String, item_no:
 	
 	print("[IkeaApiWrapper] Model downloaded for item %s (%d bytes): %s" % [compact, body.size(), cache_path])
 	
+	# Try to decompress if it's a Draco-compressed model
+	_try_decompress_model(item_no, cache_path)
+	
 	# Emit success signal with the file path
 	model_downloaded.emit(compact, cache_path)
+
+## Attempts to decompress a Draco-compressed GLB model using gltf-transform
+## This is a helper function that runs an external command if available
+func _try_decompress_model(item_no: String, model_path: String) -> void:
+	# Check if the model is Draco-compressed by reading the first part of the file
+	var file = FileAccess.open(model_path, FileAccess.READ)
+	if file == null:
+		return
+	
+	# Read first 1KB to check for Draco extension
+	var header = file.get_buffer(min(1024, file.get_length()))
+	file.close()
+	
+	var header_str = header.get_string_from_utf8()
+	if not "KHR_draco_mesh_compression" in header_str:
+		# Not Draco compressed, no need to decompress
+		return
+	
+	print("[IkeaApiWrapper] Model is Draco-compressed, attempting to decompress...")
+	
+	# Check if gltf-transform is available
+	var output = []
+	var exit_code = OS.execute("which", ["gltf-transform"], output, true)
+	
+	if exit_code != 0:
+		push_warning("[IkeaApiWrapper] gltf-transform not found. Install with: npm install -g @gltf-transform/cli")
+		push_warning("[IkeaApiWrapper] Model will remain Draco-compressed and may not import in Godot")
+		return
+	
+	# Decompress the model
+	var compact = compact_item_no(item_no)
+	var output_path = cache_dir.path_join(compact).path_join("model_uncompressed.glb")
+	
+	var decompress_output = []
+	exit_code = OS.execute("gltf-transform", ["draco", model_path, output_path, "--decode"], decompress_output, true)
+	
+	if exit_code == 0:
+		print("[IkeaApiWrapper] Successfully decompressed model to: %s" % output_path)
+		print("[IkeaApiWrapper] Use the uncompressed version for importing into Godot")
+	else:
+		push_error("[IkeaApiWrapper] Failed to decompress model: %s" % str(decompress_output))
