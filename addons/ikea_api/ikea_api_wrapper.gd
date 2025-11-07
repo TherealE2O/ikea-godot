@@ -23,6 +23,7 @@ var country: String = "ie"
 var language: String = "en"
 var cache_dir: String = "res://cache"
 var _http_pool: Array[HTTPRequest] = []
+var _http_busy: Array[bool] = []
 
 ## Constructor
 func _init(p_country: String = "ie", p_language: String = "en") -> void:
@@ -37,6 +38,7 @@ func _ready() -> void:
 		req.timeout = REQUEST_TIMEOUT  # Set timeout for each request
 		add_child(req)
 		_http_pool.append(req)
+		_http_busy.append(false)
 	
 	# Validate cache directory is writable
 	if not cache_dir.is_empty():
@@ -52,15 +54,16 @@ func _ready() -> void:
 			print("[IkeaApiWrapper] Cache directory ready: %s" % cache_dir)
 
 ## HTTP Request Pool Management
-func _get_http_request() -> HTTPRequest:
+func _get_http_request() -> int:
 	# Find an available HTTPRequest node from the pool
-	for req in _http_pool:
-		if not req.is_busy():
-			return req
+	for i in range(_http_pool.size()):
+		if not _http_busy[i]:
+			_http_busy[i] = true
+			return i
 	
-	# All requests are busy, return null to indicate queuing needed
+	# All requests are busy, return -1 to indicate queuing needed
 	push_error("[IkeaApiWrapper] All HTTP request nodes are busy. Consider increasing MAX_HTTP_REQUESTS or waiting for pending requests to complete.")
-	return null
+	return -1
 
 ## Item Number Utility Functions
 ## Validates if a string matches the IKEA item number pattern
@@ -108,14 +111,16 @@ func _make_request(url: String, params: Dictionary, headers: Dictionary, callbac
 	# Validate URL
 	if url.is_empty():
 		push_error("[IkeaApiWrapper] Cannot make request with empty URL")
-		callback.call(null, "Invalid request: empty URL")
+		callback.call(PackedByteArray(), "Invalid request: empty URL")
 		return
 	
 	# Get an available HTTPRequest from the pool
-	var http = _get_http_request()
-	if http == null:
-		callback.call(null, "No available HTTP request nodes - all requests are busy")
+	var http_index = _get_http_request()
+	if http_index == -1:
+		callback.call(PackedByteArray(), "No available HTTP request nodes - all requests are busy")
 		return
+	
+	var http = _http_pool[http_index]
 	
 	# Build query string from parameters
 	var query_string = ""
@@ -150,7 +155,7 @@ func _make_request(url: String, params: Dictionary, headers: Dictionary, callbac
 	if http.request_completed.is_connected(_on_request_completed):
 		http.request_completed.disconnect(_on_request_completed)
 	
-	http.request_completed.connect(_on_request_completed.bind(callback))
+	http.request_completed.connect(_on_request_completed.bind(callback, http_index))
 	
 	# Log the request for debugging
 	print("[IkeaApiWrapper] Making request to: %s" % full_url)
@@ -158,34 +163,38 @@ func _make_request(url: String, params: Dictionary, headers: Dictionary, callbac
 	# Make the HTTP request
 	var err = http.request(full_url, headers_array)
 	if err != OK:
+		_http_busy[http_index] = false
 		var error_msg = "Failed to start HTTP request (Error code: %d)" % err
 		push_error("[IkeaApiWrapper] %s for URL: %s" % [error_msg, full_url])
-		callback.call(null, error_msg)
+		callback.call(PackedByteArray(), error_msg)
 
 ## Handles HTTP request completion
 ## Validates response code, processes body, and calls the provided callback
-func _on_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, callback: Callable) -> void:
+func _on_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, callback: Callable, http_index: int) -> void:
+	# Mark this HTTP request as available again
+	_http_busy[http_index] = false
+	
 	# Disconnect the signal to prevent memory leaks
-	var http = callback.get_object() as HTTPRequest
-	if http != null and http.request_completed.is_connected(_on_request_completed):
+	var http = _http_pool[http_index]
+	if http.request_completed.is_connected(_on_request_completed):
 		http.request_completed.disconnect(_on_request_completed)
 	
 	# Check for network/connection errors with detailed error messages
 	if result != HTTPRequest.RESULT_SUCCESS:
 		var error_msg = _get_http_error_message(result)
 		push_error("[IkeaApiWrapper] HTTP request failed: %s (Result code: %d)" % [error_msg, result])
-		callback.call(null, error_msg)
+		callback.call(PackedByteArray(), error_msg)
 		return
 	
 	# Validate response code (200-299 range indicates success)
 	if response_code < 200 or response_code >= 300:
 		var error_msg = _get_http_status_message(response_code)
 		push_error("[IkeaApiWrapper] HTTP request failed with status %d: %s" % [response_code, error_msg])
-		callback.call(null, "HTTP %d: %s" % [response_code, error_msg])
+		callback.call(PackedByteArray(), "HTTP %d: %s" % [response_code, error_msg])
 		return
 	
 	# Success - pass the response body to the callback
-	callback.call(body, null)
+	callback.call(body, "")
 
 ## Returns a descriptive error message for HTTPRequest result codes
 func _get_http_error_message(result: int) -> String:
