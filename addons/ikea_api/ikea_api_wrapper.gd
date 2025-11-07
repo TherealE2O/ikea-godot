@@ -977,9 +977,10 @@ func _try_decompress_model(item_no: String, model_path: String) -> void:
 	
 	print("[IkeaApiWrapper] Model is Draco-compressed, attempting to decompress...")
 	
-	# Check if gltf-transform is available
+	# Check if gltf-transform is available (cross-platform check)
 	var output = []
-	var exit_code = OS.execute("which", ["gltf-transform"], output, true)
+	var check_command = "where" if OS.get_name() == "Windows" else "which"
+	var exit_code = OS.execute(check_command, ["gltf-transform"], output, true)
 	
 	if exit_code != 0:
 		push_warning("[IkeaApiWrapper] gltf-transform not found. Install with: npm install -g @gltf-transform/cli")
