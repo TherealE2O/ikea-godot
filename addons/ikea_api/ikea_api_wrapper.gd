@@ -795,12 +795,8 @@ func get_model(item_no: String) -> void:
 	
 	# No cached exists data, need to check
 	# Connect to the signal temporarily to handle the response
-	var on_exists_checked = func(checked_item_no: String, exists: bool):
+	var on_exists_checked: Callable = func(checked_item_no: String, exists: bool):
 		if checked_item_no == compact:
-			# Disconnect the signal
-			if model_exists_checked.is_connected(on_exists_checked):
-				model_exists_checked.disconnect(on_exists_checked)
-			
 			if exists:
 				# Model exists, proceed to fetch metadata
 				print("[IkeaApiWrapper] Model availability confirmed for item %s" % compact)
@@ -811,7 +807,7 @@ func get_model(item_no: String) -> void:
 				push_error("[IkeaApiWrapper] %s: %s" % [error_msg, item_no])
 				model_failed.emit(compact, error_msg)
 	
-	model_exists_checked.connect(on_exists_checked)
+	model_exists_checked.connect(on_exists_checked, CONNECT_ONE_SHOT)
 	check_model_exists(item_no)
 
 ## Internal method to fetch model metadata from the rotera API
