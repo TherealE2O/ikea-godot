@@ -512,22 +512,29 @@ func _on_search_completed(body: PackedByteArray, error: String) -> void:
 	
 	# Process each product item
 	for item in items:
-		# Debug: print first item structure to see what fields are available
-		if results.is_empty() and skipped_count == 0:
-			print("[IkeaApiWrapper] First item fields: ", item.keys())
-		
-		# Only require itemNo and name as essential fields
-		if not item.has("itemNo") or not item.has("name"):
+		# Check if this is a product type item
+		if not item.has("product") or item.get("type") != "PRODUCT":
 			skipped_count += 1
 			continue
 		
-		# Build result dictionary with optional fields
+		var product = item["product"]
+		
+		# Debug: print first product structure
+		if results.is_empty():
+			print("[IkeaApiWrapper] First product fields: ", product.keys())
+		
+		# Extract required fields from product
+		if not product.has("itemNo") or not product.has("name"):
+			skipped_count += 1
+			continue
+		
+		# Build result dictionary
 		var result = {
-			"itemNo": item["itemNo"],
-			"name": item["name"],
-			"mainImageUrl": item.get("mainImageUrl", item.get("imageUrl", "")),
-			"mainImageAlt": item.get("mainImageAlt", item.get("name", "")),
-			"pipUrl": item.get("pipUrl", "")
+			"itemNo": product["itemNo"],
+			"name": product["name"],
+			"mainImageUrl": product.get("mainImageUrl", product.get("imageUrl", "")),
+			"mainImageAlt": product.get("mainImageAlt", product.get("name", "")),
+			"pipUrl": product.get("pipUrl", "")
 		}
 		
 		results.append(result)
