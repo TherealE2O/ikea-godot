@@ -438,21 +438,17 @@ func search(query: String) -> void:
 	# Detect if query is an item number
 	var is_item_query = is_item_no(query)
 	
-	# Construct query parameters
+	# Construct query parameters - simplified to avoid 400 errors
 	var params = {
-		"types": "PRODUCT",
 		"q": query,
-		"c": "lf",
-		"v": "20240201",
-		"autocorrect": "true",
-		"subcategories-style": "tree-navigation"
+		"types": "PRODUCT"
 	}
 	
 	# If searching by item number, limit results to 1
 	if is_item_query:
-		params["size"] = "1"
+		params["size"] = 1
 	else:
-		params["size"] = "24"
+		params["size"] = 24
 	
 	# Make the HTTP request
 	_make_request(url, params, {}, _on_search_completed)
