@@ -1,0 +1,106 @@
+[gd_scene load_steps=2 format=3 uid="uid://bq9v8k5o5w1rb"]
+
+[ext_resource type="Script" path="res://addons/ikea_browser/IKEABrowserDock.gd" id="1_4h6qe"]
+
+[node name="IKEABrowserDock" type="PanelContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -16.0
+offset_bottom = -16.0
+script = ExtResource("1_4h6qe")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -16.0
+offset_bottom = -16.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -16.0
+offset_bottom = -16.0
+
+[node name="SearchBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 30.0
+
+[node name="RegionLabel" type="Label" parent="MarginContainer/VBoxContainer/SearchBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 30.0
+text = "Region: IE - Language: EN"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/SearchBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 30.0
+size_flags_horizontal = 3
+
+[node name="PreferencesButton" type="Button" parent="MarginContainer/VBoxContainer/SearchBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 30.0
+text = "Preferences"
+
+[node name="SearchBox2" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 60.0
+
+[node name="SearchEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/SearchBox2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 30.0
+placeholder_text = "Search IKEA products..."
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_right = -16.0
+offset_bottom = 90.0
+text = "Enter search terms to find IKEA products"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -16.0
+offset_bottom = -16.0
+
+[node name="ResultsContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -16.0
+offset_bottom = -16.0
+columns = 2

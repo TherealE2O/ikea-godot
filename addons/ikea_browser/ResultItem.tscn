@@ -1,0 +1,13 @@
+<!-- ResultItem.tscn -->
+<?xml version="1.0" encoding="UTF-8"?>
+<scene format="3">
+    <node name="ResultItem" type="PanelContainer">
+        <margin_container name="MarginContainer" anchors_preset="PRESET_FULL_RECT" margin_right="1.0" margin_bottom="1.0">
+            <vbox_container name="VBoxContainer">
+                <node name="ProductLabel" type="Label" text="Product Name"/>
+                <texture_rect name="ThumbnailTexture" expand_mode="1" stretch_mode="1" custom_minimum_size="Vector2(100, 100)"/>
+                <node name="ImportButton" type="Button" text="Import" pressed="_on_import_button_pressed"/>
+            </vbox_container>
+        </margin_container>
+    </node>
+</scene>
